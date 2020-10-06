@@ -800,8 +800,7 @@ private:
     if (oneIn(2)) {
       return;
     }
-    struct Modder
-      : public PostWalker<Modder> {
+    struct Modder : public PostWalker<Modder> {
       Module& wasm;
       TranslateToFuzzReader& parent;
 
