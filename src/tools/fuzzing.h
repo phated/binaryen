@@ -809,8 +809,10 @@ private:
 
       void visitDrop(Drop* curr) {
         if (parent.isLoggableType(curr->value->type) && parent.oneIn(2)) {
-          replaceCurrent(parent.builder.makeCall(
-            std::string("log-") + curr->value->type.toString(), {curr->value}, Type::none));
+          replaceCurrent(parent.builder.makeCall(std::string("log-") +
+                                                   curr->value->type.toString(),
+                                                 {curr->value},
+                                                 Type::none));
         }
       }
     };
