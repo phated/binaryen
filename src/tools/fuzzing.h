@@ -779,8 +779,8 @@ private:
         continue;
       }
       auto* func = ref.get();
-      undrop(func);
-      interpose(func);
+      dropToLog(func);
+      // TODO: interposition, replace initial a(b) with a(RANDOM_THING(b))
       recombine(func);
       mutate(func);
       fixLabels(func);
@@ -795,7 +795,7 @@ private:
   // by a pass, and we verify it is the expected one. But this does not use the
   // value in a way the fuzzer can notice. Replace some drops with a logging
   // operation instead.
-  void undrop(Function* func) {
+  void dropToLog(Function* func) {
     // Don't always do this.
     if (oneIn(2)) {
       return;
@@ -809,8 +809,8 @@ private:
 
       void visitDrop(Drop* curr) {
         if (parent.isLoggableType(curr->value->type) && parent.oneIn(2)) {
-          replaceCurrent(builder.makeCall(
-            std::string("log-") + type.toString(), {curr->value}, Type::none));
+          replaceCurrent(parent.builder.makeCall(
+            std::string("log-") + curr->value->type.toString(), {curr->value}, Type::none));
         }
       }
     };
@@ -2861,13 +2861,13 @@ private:
           .add(FeatureSet::ReferenceTypes | FeatureSet::ExceptionHandling,
                Type::exnref));
     }
-    return loggableTypes
+    return loggableTypes;
   }
 
   Type getLoggableType() { return pick(getLoggableTypes()); }
 
   bool isLoggableType(Type type) {
-    auto& types = getLoggableTypes();
+    const auto& types = getLoggableTypes();
     return std::find(types.begin(), types.end(), type) != types.end();
   }
 
