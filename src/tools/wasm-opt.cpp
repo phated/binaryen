@@ -236,8 +236,9 @@ int main(int argc, const char* argv[]) {
   // translate-to-fuzz mode the input file is the random data, and used later
   // down in TranslateToFuzzReader, but there is also an optional initial fuzz
   // file that if it exists we read it, then add more fuzz on top.
-  if (!translateToFuzz || initialFuzz) {
-    std::string inputFile = !translateToFuzz ? options.extra["infile"] : initialFuzz;
+  if (!translateToFuzz || initialFuzz.size()) {
+    std::string inputFile =
+      !translateToFuzz ? options.extra["infile"] : initialFuzz;
     ModuleReader reader;
     // Enable DWARF parsing if we were asked for debug info, and were not
     // asked to remove it.

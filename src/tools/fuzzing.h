@@ -188,6 +188,7 @@ public:
   void setAllowOOB(bool allowOOB_) { allowOOB = allowOOB_; }
 
   void build() {
+    modifyInitialContents();
     if (allowMemory) {
       setupMemory();
     }
@@ -769,6 +770,53 @@ private:
     Fixer fixer(wasm, *this);
     fixer.walk(func->body);
     ReFinalize().walkFunctionInModule(func, &wasm);
+  }
+
+  void modifyInitialContents() {
+    for (auto& ref : wasm.functions) {
+      // In some cases leave the input function alone.
+      if (oneIn(2)) {
+        continue;
+      }
+      auto* func = ref.get();
+      undrop(func);
+      interpose(func);
+      recombine(func);
+      mutate(func);
+      fixLabels(func);
+    }
+  }
+
+  // Initial wasm contents may have come from a test that uses the drop pattern:
+  //
+  //  (drop ..something interesting..)
+  //
+  // The dropped interesting thing is optimized to some other interesting thing
+  // by a pass, and we verify it is the expected one. But this does not use the
+  // value in a way the fuzzer can notice. Replace some drops with a logging
+  // operation instead.
+  void undrop(Function* func) {
+    // Don't always do this.
+    if (oneIn(2)) {
+      return;
+    }
+    struct Modder
+      : public PostWalker<Modder> {
+      Module& wasm;
+      TranslateToFuzzReader& parent;
+
+      Modder(Module& wasm, TranslateToFuzzReader& parent)
+        : wasm(wasm), parent(parent) {}
+
+      void visitDrop(Drop* curr) {
+        if (parent.isLoggableType(curr->value->type) && parent.oneIn(2)) {
+          replaceCurrent(builder.makeCall(
+            std::string("log-") + type.toString(), {curr->value}, Type::none));
+        }
+      }
+    };
+    Modder modder(wasm, *this);
+    modder.walk(func->body);
   }
 
   // the fuzzer external interface sends in zeros (simpler to compare
@@ -2803,16 +2851,26 @@ private:
   // removed during optimization
   // - there's no point in logging externref or anyref because these are opaque
   // - don't bother logging tuples
-  std::vector<Type> getLoggableTypes() {
-    return items(
-      FeatureOptions<Type>()
-        .add(FeatureSet::MVP, Type::i32, Type::i64, Type::f32, Type::f64)
-        .add(FeatureSet::SIMD, Type::v128)
-        .add(FeatureSet::ReferenceTypes | FeatureSet::ExceptionHandling,
-             Type::exnref));
+  std::vector<Type> loggableTypes;
+
+  const std::vector<Type>& getLoggableTypes() {
+    if (loggableTypes.empty()) {
+      loggableTypes = items(
+        FeatureOptions<Type>()
+          .add(FeatureSet::MVP, Type::i32, Type::i64, Type::f32, Type::f64)
+          .add(FeatureSet::SIMD, Type::v128)
+          .add(FeatureSet::ReferenceTypes | FeatureSet::ExceptionHandling,
+               Type::exnref));
+    }
+    return loggableTypes
   }
 
   Type getLoggableType() { return pick(getLoggableTypes()); }
+
+  bool isLoggableType(Type type) {
+    auto& types = getLoggableTypes();
+    return std::find(types.begin(), types.end(), type) != types.end();
+  }
 
   // statistical distributions
 
