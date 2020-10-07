@@ -717,11 +717,15 @@ def pick_initial_contents():
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
     print('initial contents:', test_name) # XXX
+    # some tests are ignored
     if os.path.basename(test_name) in ignored_tests:
         return None
     # dwarf is not compatible with various things the fuzzer tests, like
     # multivalue
     if 'dwarf' in test_name:
+        return None
+    # tests that check validation errors are not helpful for us
+    if '.fail.' in test_name:
         return None
 
     if test_name.endswith('.wast'):
