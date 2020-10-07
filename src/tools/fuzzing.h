@@ -445,6 +445,9 @@ private:
 
   void finalizeMemory() {
     wasm.memory.initial = std::max(wasm.memory.initial, USABLE_MEMORY);
+    if (wasm.memory.max < wasm.memory.initial) {
+      wasm.memory.max = wasm.memory.initial;
+    }
     // Shared memories must have a maximum size. This change may be needed if
     // we have an initial memory with no maximum, and then add an atomic
     // instruction, which would make us change the memory to shared.
