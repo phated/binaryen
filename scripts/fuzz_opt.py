@@ -702,12 +702,30 @@ testcase_handlers = [
 ]
 
 
+test_suffixes = ['*.wasm', '*.wast', '*.wat']
+core_tests = shared.get_tests(shared.get_test_dir('.'), test_suffixes)
+passes_tests = shared.get_tests(shared.get_test_dir('passes'), test_suffixes)
+spec_tests = shared.get_tests(shared.get_test_dir('spec'), test_suffixes)
+all_tests = core_tests + passes_tests + spec_tests
+
+def pick_initial_contents():
+    #  TODO 0.5 for None
+    choice = random.choice(all_tests)
+    print(choice)
+    1/0
+
+
 # Do one test, given an input file for -ttf and some optimizations to run
 def test_one(random_input, opts, given_wasm):
     randomize_pass_debug()
     randomize_feature_opts()
     randomize_fuzz_settings()
     print()
+
+    # we may add fuzzing on top of an initial test file from our test suite.
+    # pick that first, even if we don't apply it, so randomization does not
+    # change when given_wasm != None
+    initial_contents = pick_initial_contents()
 
     if given_wasm:
         # if given a wasm file we want to use it as is, but we also want to
@@ -719,6 +737,8 @@ def test_one(random_input, opts, given_wasm):
         # emit the target features section so that reduction can work later,
         # without needing to specify the features
         generate_command = [in_bin('wasm-opt'), random_input, '-ttf', '-o', 'a.wasm', '--emit-target-features'] + FUZZ_OPTS + FEATURE_OPTS
+        if initial_contents:
+            generate_command += ['--initial-fuzz=' + initial_contents]
         if PRINT_WATS:
             printed = run(generate_command + ['--print'])
             with open('a.printed.wast', 'w') as f:
