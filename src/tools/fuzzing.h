@@ -188,7 +188,6 @@ public:
   void setAllowOOB(bool allowOOB_) { allowOOB = allowOOB_; }
 
   void build() {
-    modifyInitialContents();
     if (allowMemory) {
       setupMemory();
     }
@@ -198,6 +197,7 @@ public:
       setupEvents();
     }
     addImportLoggingSupport();
+    modifyInitialFunctions();
     // keep adding functions until we run out of input
     while (!finishedInput) {
       auto* func = addFunction();
@@ -507,6 +507,19 @@ private:
   std::map<Type, std::vector<Index>>
     typeLocals; // type => list of locals with that type
 
+  void prepareToCreateFunctionContents(Function* func_) {
+    func = func_;
+    labelIndex = 0;
+    assert(breakableStack.empty());
+    assert(hangStack.empty());
+  }
+
+  void finishCreatingFunctionContents() {
+    typeLocals.clear();
+    assert(breakableStack.empty());
+    assert(hangStack.empty());
+  }
+
   Function* addFunction() {
     LOGGING_PERCENT = upToSquared(100);
     Index num = wasm.functions.size();
@@ -528,9 +541,7 @@ private:
       typeLocals[type].push_back(params.size() + func->vars.size());
       func->vars.push_back(type);
     }
-    labelIndex = 0;
-    assert(breakableStack.empty());
-    assert(hangStack.empty());
+    prepareToCreateFunctionContents(func);
     // with small chance, make the body unreachable
     auto bodyType = func->sig.results;
     if (oneIn(10)) {
@@ -561,8 +572,6 @@ private:
     if (HANG_LIMIT > 0) {
       addHangLimitChecks(func);
     }
-    assert(breakableStack.empty());
-    assert(hangStack.empty());
     wasm.addFunction(func);
     // export some, but not all (to allow inlining etc.). make sure to
     // export at least one, though, to keep each testcase interesting
@@ -578,7 +587,7 @@ private:
       wasm.table.segments[0].data.push_back(func->name);
     }
     // cleanup
-    typeLocals.clear();
+    finishCreatingFunctionContents();
     return func;
   }
 
@@ -772,19 +781,27 @@ private:
     ReFinalize().walkFunctionInModule(func, &wasm);
   }
 
-  void modifyInitialContents() {
+  void modifyInitialFunctions() {
+    if (wasm.functions.empty()) {
+      return;
+    }
+    // Pick a chance to modify a function, so that we in some cases will modify
+    // none or almost all.
+    const int RESOLUTION = 10;
+    auto chance = upTo(RESOLUTION + 1);
     for (auto& ref : wasm.functions) {
-      // In some cases leave the input function alone.
-      if (oneIn(2)) {
+      auto* func = ref.get();
+      if (func->imported() || upTo(RESOLUTION) < chance) {
         continue;
       }
-      auto* func = ref.get();
+      prepareToCreateFunctionContents(func);
       dropToLog(func);
-    add some locals?
+      // TODO add some locals?
       // TODO: interposition, replace initial a(b) with a(RANDOM_THING(b))
       recombine(func);
       mutate(func);
       fixLabels(func);
+      finishCreatingFunctionContents();
     }
   }
 
