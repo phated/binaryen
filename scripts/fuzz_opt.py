@@ -720,10 +720,6 @@ def pick_initial_contents():
     # some tests are ignored
     if os.path.basename(test_name) in ignored_tests:
         return None
-    # dwarf is not compatible with various things the fuzzer tests, like
-    # multivalue
-    if 'dwarf' in test_name:
-        return None
     # tests that check validation errors are not helpful for us
     if '.fail.' in test_name:
         return None
@@ -739,6 +735,11 @@ def pick_initial_contents():
             with open(test_name, 'w') as f:
                 f.write(module)
     print(test_name) # XXX
+
+    # disable features that don't work on a significant amount of the test
+    # suite, such as DWARF rewriting not working with multivalue
+    global FEATURE_OPTS
+    FEATURE_OPTS.append('--disable-multivalue')
 
     return test_name
 
