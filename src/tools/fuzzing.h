@@ -806,15 +806,17 @@ private:
     if (wasm.functions.empty()) {
       return;
     }
-    // Pick a chance to modify a function, so that we in some cases will modify
-    // none or almost all.
+    // Pick a chance to fuzz the contents of a function.
     const int RESOLUTION = 10;
     auto chance = upTo(RESOLUTION + 1);
     for (auto& ref : wasm.functions) {
       auto* func = ref.get();
+      if (func->imported()) {
+        continue;
+      }
       prepareToCreateFunctionContents(func);
       // Optionally, fuzz the function contents.
-      if (!func->imported() && upTo(RESOLUTION) >= chance) {
+      if (upTo(RESOLUTION) >= chance) {
         dropToLog(func);
         // TODO add some locals?
         // TODO: interposition, replace initial a(b) with a(RANDOM_THING(b))
