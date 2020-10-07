@@ -704,6 +704,7 @@ private:
           // (This is not always valid due to nesting of labels, but
           // we'll fix that up later.)
           replaceCurrent(parent.make(curr->type));
+          // TODO: more subtle mutations, e.g., tweaking of a Const's value
         }
       }
     };
