@@ -535,6 +535,9 @@ private:
   }
 
   void finishCreatingFunctionContents() {
+    if (HANG_LIMIT > 0) {
+      addHangLimitChecks(func);
+    }
     typeLocals.clear();
     assert(breakableStack.empty());
     assert(hangStack.empty());
@@ -589,9 +592,6 @@ private:
       fixLabels(func);
     }
     // Add hang limit checks after all other operations on the function body.
-    if (HANG_LIMIT > 0) {
-      addHangLimitChecks(func);
-    }
     wasm.addFunction(func);
     // export some, but not all (to allow inlining etc.). make sure to
     // export at least one, though, to keep each testcase interesting
