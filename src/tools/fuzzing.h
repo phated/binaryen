@@ -780,6 +780,7 @@ private:
       }
       auto* func = ref.get();
       dropToLog(func);
+    add some locals?
       // TODO: interposition, replace initial a(b) with a(RANDOM_THING(b))
       recombine(func);
       mutate(func);
