@@ -734,7 +734,6 @@ def pick_initial_contents():
             test_name = 'initial.wat'
             with open(test_name, 'w') as f:
                 f.write(module)
-    print(test_name) # XXX
 
     # disable features that don't work on a significant amount of the test
     # suite, such as DWARF rewriting not working with multivalue
