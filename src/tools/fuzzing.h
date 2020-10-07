@@ -812,16 +812,18 @@ private:
     auto chance = upTo(RESOLUTION + 1);
     for (auto& ref : wasm.functions) {
       auto* func = ref.get();
-      if (func->imported() || upTo(RESOLUTION) < chance) {
-        continue;
-      }
       prepareToCreateFunctionContents(func);
-      dropToLog(func);
-      // TODO add some locals?
-      // TODO: interposition, replace initial a(b) with a(RANDOM_THING(b))
-      recombine(func);
-      mutate(func);
-      fixLabels(func);
+      // Optionally, fuzz the function contents.
+      if (!func->imported() && upTo(RESOLUTION) >= chance) {
+        dropToLog(func);
+        // TODO add some locals?
+        // TODO: interposition, replace initial a(b) with a(RANDOM_THING(b))
+        recombine(func);
+        mutate(func);
+        fixLabels(func);
+      }
+      // Note that even if we don't fuzz the contents we still need to call
+      // finish so that we add hang limit protection and other general things.
       finishCreatingFunctionContents();
     }
   }
