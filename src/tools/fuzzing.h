@@ -409,7 +409,9 @@ private:
     wasm.addExport(
       builder.makeExport(hasher->name, hasher->name, ExternalKind::Function));
     // Export memory so JS fuzzing can use it
-    wasm.addExport(builder.makeExport("memory", "0", ExternalKind::Memory));
+    if (!wasm.getExportOrNull("memory")) {
+      wasm.addExport(builder.makeExport("memory", "0", ExternalKind::Memory));
+    }
   }
 
   void setupTable() {
@@ -427,8 +429,10 @@ private:
                            type,
                            makeConst(type),
                            Builder::Mutable);
-      wasm.addGlobal(global);
-      globalsByType[type].push_back(global->name);
+      if (!wasm.getGlobalOrNull(global->name)) {
+        wasm.addGlobal(global);
+        globalsByType[type].push_back(global->name);
+      }
     }
   }
 

@@ -709,11 +709,21 @@ core_tests = shared.get_tests(shared.get_test_dir('.'), test_suffixes)
 passes_tests = shared.get_tests(shared.get_test_dir('passes'), test_suffixes)
 spec_tests = shared.get_tests(shared.get_test_dir('spec'), test_suffixes)
 all_tests = core_tests + passes_tests + spec_tests
+ignored_tests = set([
+    'resizing64.wast',  # fuzzer doesn't support wasm64 yet
+])
 
 def pick_initial_contents():
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
     print('initial contents:', test_name) # XXX
+    if os.path.basename(test_name) in ignored_tests:
+        return None
+    # dwarf is not compatible with various things the fuzzer tests, like
+    # multivalue
+    if 'dwarf' in test_name:
+        return None
+
     if test_name.endswith('.wast'):
         # this can contain multiple modules, pick one
         split_parts = support.split_wast(test_name)
@@ -725,6 +735,7 @@ def pick_initial_contents():
             with open(test_name, 'w') as f:
                 f.write(module)
     print(test_name) # XXX
+
     return test_name
 
 
