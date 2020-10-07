@@ -206,6 +206,9 @@ public:
     if (HANG_LIMIT > 0) {
       addHangLimitSupport();
     }
+    if (allowMemory) {
+      finalizeMemory();
+    }
     finalizeTable();
   }
 
@@ -242,7 +245,7 @@ private:
   // the memory that we use, a small portion so that we have a good chance of
   // looking at writes (we also look outside of this region with small
   // probability) this should be a power of 2
-  static const int USABLE_MEMORY = 16;
+  const Address USABLE_MEMORY = 16;
 
   // the number of runtime iterations (function calls, loop backbranches) we
   // allow before we stop execution with a trap, to prevent hangs. 0 means
@@ -437,6 +440,16 @@ private:
                           WASM_EVENT_ATTRIBUTE_EXCEPTION,
                           Signature(getControlFlowType(), Type::none));
       wasm.addEvent(event);
+    }
+  }
+
+  void finalizeMemory() {
+    wasm.memory.initial = std::max(wasm.memory.initial, USABLE_MEMORY);
+    // Shared memories must have a maximum size. This change may be needed if
+    // we have an initial memory with no maximum, and then add an atomic
+    // instruction, which would make us change the memory to shared.
+    if (wasm.memory.shared && wasm.memory.max == Memory::kUnlimitedSize) {
+      wasm.memory.max = wasm.memory.initial;
     }
   }
 
