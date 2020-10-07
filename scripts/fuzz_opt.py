@@ -28,6 +28,8 @@ import time
 import traceback
 
 from test import shared
+from test import support
+
 
 assert sys.version_info.major == 3, 'requires Python 3!'
 
@@ -710,9 +712,20 @@ all_tests = core_tests + passes_tests + spec_tests
 
 def pick_initial_contents():
     #  TODO 0.5 for None
-    choice = random.choice(all_tests)
-    print(choice)
-    1/0
+    test_name = random.choice(all_tests)
+    print('initial contents:', test_name) # XXX
+    if test_name.endswith('.wast'):
+        # this can contain multiple modules, pick one
+        split_parts = support.split_wast(test_name)
+        if len(split_parts) > 1:
+            chosen = random.choice(split_parts)
+            module, asserts = chosen
+            print(module)
+            test_name = 'initial.wat'
+            with open(test_name, 'w') as f:
+                f.write(module)
+    print(test_name) # XXX
+    return test_name
 
 
 # Do one test, given an input file for -ttf and some optimizations to run
