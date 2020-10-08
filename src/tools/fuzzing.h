@@ -461,7 +461,7 @@ private:
   }
 
   void finalizeTable() {
-    wasm.table.initial = wasm.table.segments[0].data.size();
+    wasm.table.initial = std::max(wasm.table.initial, (Address)wasm.table.segments[0].data.size());
     wasm.table.max =
       oneIn(2) ? Address(Table::kUnlimitedSize) : wasm.table.initial;
   }

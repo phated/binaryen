@@ -70,8 +70,9 @@ def random_size():
     return random.randint(INPUT_SIZE_MIN, 2 * INPUT_SIZE_MEAN - INPUT_SIZE_MIN)
 
 
-def run(cmd, stderr=None):
-    print(' '.join(cmd))
+def run(cmd, stderr=None, silent=False):
+    if not silent:
+        print(' '.join(cmd))
     return subprocess.check_output(cmd, stderr=stderr, text=True)
 
 
@@ -745,9 +746,11 @@ def pick_initial_contents():
     # we pick atomics.wast but want to run with --disable-atomics, then we'd
     # error. test the wasm.
     try:
-        run([in_bin('wasm-opt'), test_name] + FEATURE_OPTS, stderr=subprocess.PIPE)
+        run([in_bin('wasm-opt'), test_name] + FEATURE_OPTS,
+            stderr=subprocess.PIPE,
+            silent=True)
     except Exception:
-        print('(initial contents not valid for features)')
+        print('(initial contents not valid for features, ignoring)')
         return None
 
     return test_name
