@@ -119,10 +119,18 @@ def randomize_feature_opts():
     print('randomized feature opts:', ' '.join(FEATURE_OPTS))
 
 
+# the optimizations to run on the wasm
 FUZZ_OPTS = None
+# whether NaN values are allowed, or we de-NaN them
 NANS = None
+# whether out of bounds operations are allowed, or we bounds-enforce them
 OOB = None
+# whether we legalize the wasm for JS
 LEGALIZE = None
+# whether we use an initial wasm file's contents as the basis for the fuzzing,
+# or if we start entirely from scratch
+INITIAL_CONTENTS = None
+
 ORIGINAL_V8_OPTS = shared.V8_OPTS[:]
 
 
@@ -716,15 +724,17 @@ ignored_tests = set([
 
 
 def pick_initial_contents():
+    global INITIAL_CONTENTS
+    INITIAL_CONTENTS = None
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
     print('initial contents:', test_name)
     # some tests are ignored
     if os.path.basename(test_name) in ignored_tests:
-        return None
+        return
     # tests that check validation errors are not helpful for us
     if '.fail.' in test_name:
-        return None
+        return
 
     if test_name.endswith('.wast'):
         # this can contain multiple modules, pick one
@@ -751,9 +761,9 @@ def pick_initial_contents():
             silent=True)
     except Exception:
         print('(initial contents not valid for features, ignoring)')
-        return None
+        return
 
-    return test_name
+    INITIAL_CONTENTS = test_name
 
 
 # Do one test, given an input file for -ttf and some optimizations to run
@@ -766,7 +776,7 @@ def test_one(random_input, opts, given_wasm):
     # we may add fuzzing on top of an initial test file from our test suite.
     # pick that first, even if we don't apply it, so randomization does not
     # change when given_wasm != None
-    initial_contents = pick_initial_contents()
+    pick_initial_contents()
 
     if given_wasm:
         # if given a wasm file we want to use it as is, but we also want to
@@ -778,8 +788,8 @@ def test_one(random_input, opts, given_wasm):
         # emit the target features section so that reduction can work later,
         # without needing to specify the features
         generate_command = [in_bin('wasm-opt'), random_input, '-ttf', '-o', 'a.wasm', '--emit-target-features'] + FUZZ_OPTS + FEATURE_OPTS
-        if initial_contents:
-            generate_command += ['--initial-fuzz=' + initial_contents]
+        if INITIAL_CONTENTS:
+            generate_command += ['--initial-fuzz=' + INITIAL_CONTENTS]
         if PRINT_WATS:
             printed = run(generate_command + ['--print'])
             with open('a.printed.wast', 'w') as f:
