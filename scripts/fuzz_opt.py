@@ -729,6 +729,11 @@ def pick_initial_contents():
     # tests that check validation errors are not helpful for us
     if '.fail.' in test_name:
         return
+    if os.path.basename(test_name) in [
+        # contains too many segments to run in a wasm VM
+        'limit-segments_disable-bulk-memory.wast',
+    ]:
+        return
 
     if test_name.endswith('.wast'):
         # this can contain multiple modules, pick one
