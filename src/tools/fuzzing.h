@@ -834,7 +834,7 @@ private:
       // Optionally, fuzz the function contents.
       if (upTo(RESOLUTION) >= chance) {
         dropToLog(func);
-        // TODO add some locals?
+        // TODO add some locals? and the rest of addFunction's operations?
         // TODO: interposition, replace initial a(b) with a(RANDOM_THING(b))
         recombine(func);
         mutate(func);
