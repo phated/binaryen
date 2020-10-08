@@ -416,6 +416,7 @@ private:
 
   void setupTable() {
     wasm.table.exists = true;
+    wasm.table.initial = wasm.table.max = 0;
     wasm.table.segments.emplace_back(builder.makeConst(int32_t(0)));
   }
 
@@ -482,7 +483,13 @@ private:
   }
 
   void finalizeTable() {
-    wasm.table.initial = std::max(wasm.table.initial, (Address)wasm.table.segments[0].data.size());
+    for (auto& segment : wasm.table.segments) {
+      Address constantOffset = 0;
+      if (auto* offset = segment.init->dynCast<Const>()) {
+        constantOffset = offset->value.getInteger();
+      }
+      wasm.table.initial = std::max(wasm.table.initial, constantOffset + segment.data.size());
+    }
     wasm.table.max =
       oneIn(2) ? Address(Table::kUnlimitedSize) : wasm.table.initial;
     // See above for globals.
