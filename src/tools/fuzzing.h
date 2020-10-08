@@ -422,6 +422,15 @@ private:
   std::map<Type, std::vector<Name>> globalsByType;
 
   void setupGlobals() {
+    // If there were initial wasm contents, there may be imported globals.
+    // Avoid that, so that all the standard fuzzing infrastructure still works
+    // (and does not fail on not providing an import).
+    for (auto& global : wasm.globals) {
+      if (global->imported()) {
+        global->module = global->base = Name();
+        global->init = makeConst(global->type);
+      }
+    }
     for (size_t index = upTo(MAX_GLOBALS); index > 0; --index) {
       auto type = getConcreteType();
       auto* global =
@@ -458,15 +467,15 @@ private:
     if (wasm.memory.shared && wasm.memory.max == Memory::kUnlimitedSize) {
       wasm.memory.max = wasm.memory.initial;
     }
+    // See above for globals.
+    wasm.memory.module = wasm.memory.base = Name();
   }
 
   void finalizeTable() {
     wasm.table.initial = std::max(wasm.table.initial, (Address)wasm.table.segments[0].data.size());
     wasm.table.max =
       oneIn(2) ? Address(Table::kUnlimitedSize) : wasm.table.initial;
-    // If there were initial wasm contents, the table may be imported. Avoid
-    // that, so that all the standard fuzzing infrastructure still works (and
-    // does not fail on not providing an import).
+    // See above for globals.
     wasm.table.module = wasm.table.base = Name();
   }
 
