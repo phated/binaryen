@@ -718,11 +718,6 @@ core_tests = shared.get_tests(shared.get_test_dir('.'), test_suffixes)
 passes_tests = shared.get_tests(shared.get_test_dir('passes'), test_suffixes)
 spec_tests = shared.get_tests(shared.get_test_dir('spec'), test_suffixes)
 all_tests = core_tests + passes_tests + spec_tests
-ignored_tests = set([
-     # fuzzer doesn't support wasm64 yet
-    'resizing64.wast',
-    'dealign64.wast',
-])
 
 
 def pick_initial_contents():
@@ -731,9 +726,6 @@ def pick_initial_contents():
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
     print('initial contents:', test_name)
-    # some tests are ignored
-    if os.path.basename(test_name) in ignored_tests:
-        return
     # tests that check validation errors are not helpful for us
     if '.fail.' in test_name:
         return
@@ -751,7 +743,10 @@ def pick_initial_contents():
     # disable features that don't work on a significant amount of the test
     # suite, such as DWARF rewriting not working with multivalue
     global FEATURE_OPTS
-    FEATURE_OPTS.append('--disable-multivalue')
+    FEATURE_OPTS += [
+        '--disable-multivalue',
+        '--disable-memory64',
+    ]
 
     # the given wasm may not work with the chosen feature opts. for example, if
     # we pick atomics.wast but want to run with --disable-atomics, then we'd
