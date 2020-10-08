@@ -488,7 +488,8 @@ private:
       if (auto* offset = segment.init->dynCast<Const>()) {
         constantOffset = offset->value.getInteger();
       }
-      wasm.table.initial = std::max(wasm.table.initial, constantOffset + segment.data.size());
+      wasm.table.initial =
+        std::max(wasm.table.initial, constantOffset + segment.data.size());
     }
     wasm.table.max =
       oneIn(2) ? Address(Table::kUnlimitedSize) : wasm.table.initial;
