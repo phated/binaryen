@@ -70,9 +70,9 @@ def random_size():
     return random.randint(INPUT_SIZE_MIN, 2 * INPUT_SIZE_MEAN - INPUT_SIZE_MIN)
 
 
-def run(cmd):
+def run(cmd, stderr=None):
     print(' '.join(cmd))
-    return subprocess.check_output(cmd, text=True)
+    return subprocess.check_output(cmd, stderr=stderr, text=True)
 
 
 def run_unchecked(cmd):
@@ -740,6 +740,15 @@ def pick_initial_contents():
     global FEATURE_OPTS
     FEATURE_OPTS.append('--disable-multivalue')
 
+    # the given wasm may not work with the chosen feature opts. for example, if
+    # we pick atomics.wast but want to run with --disable-atomics, then we'd
+    # error. test the wasm.
+    try:
+        run([in_bin('wasm-opt'), test_name] + FEATURE_OPTS, stderr=subprocess.PIPE)
+    except Exception as e:
+        print('(initial contents not valid for features)')
+        return None
+
     return test_name
 
 
@@ -1000,7 +1009,9 @@ if __name__ == '__main__':
             # longer working on the original test case but modified one, which
             # is likely to be called within wasm-reduce script itself, so
             # original.wasm and reduce.sh should not be overwritten.
-            if not given_wasm:
+            # Note that we can't do this if a.wasm doesn't exist, which can be
+            # the case if we failed to even generate the wasm.
+            if not given_wasm and os.path.exists('a.wasm'):
                 # show some useful info about filing a bug and reducing the
                 # testcase (to make reduction simple, save "original.wasm" on
                 # the side, so that we can autoreduce using the name "a.wasm"
