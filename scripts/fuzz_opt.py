@@ -786,11 +786,6 @@ def test_one(random_input, opts, given_wasm):
         generate_command = [in_bin('wasm-opt'), random_input, '-ttf', '-o', 'a.wasm', '--emit-target-features'] + FUZZ_OPTS + FEATURE_OPTS
         if INITIAL_CONTENTS:
             generate_command += ['--initial-fuzz=' + INITIAL_CONTENTS]
-            # add -g so that function names from the initial contents are
-            # preserved, but don't always do it as in theory it might affect
-            # something
-            if random.random() < 0.5:
-                generate_command += ['-g']
         if PRINT_WATS:
             printed = run(generate_command + ['--print'])
             with open('a.printed.wast', 'w') as f:
