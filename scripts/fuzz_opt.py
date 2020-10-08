@@ -732,6 +732,8 @@ def pick_initial_contents():
     if os.path.basename(test_name) in [
         # contains too many segments to run in a wasm VM
         'limit-segments_disable-bulk-memory.wast',
+        # https://github.com/WebAssembly/binaryen/issues/3203
+        'simd.wast',
     ]:
         return
 
