@@ -40,7 +40,7 @@ assert sys.version_info.major == 3, 'requires Python 3!'
 CONSTANT_FEATURE_OPTS = ['--all-features']
 
 INPUT_SIZE_MIN = 1024
-INPUT_SIZE_MEAN = 40 * 1024
+INPUT_SIZE_MEAN = 10 * 1024  # 40
 INPUT_SIZE_MAX = 5 * INPUT_SIZE_MEAN
 
 PRINT_WATS = False
@@ -719,7 +719,9 @@ passes_tests = shared.get_tests(shared.get_test_dir('passes'), test_suffixes)
 spec_tests = shared.get_tests(shared.get_test_dir('spec'), test_suffixes)
 all_tests = core_tests + passes_tests + spec_tests
 ignored_tests = set([
-    'resizing64.wast',  # fuzzer doesn't support wasm64 yet
+     # fuzzer doesn't support wasm64 yet
+    'resizing64.wast',
+    'dealign64.wast',
 ])
 
 
