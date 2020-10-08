@@ -824,13 +824,13 @@ private:
     auto chance = upTo(RESOLUTION + 1);
     for (auto& ref : wasm.functions) {
       auto* func = ref.get();
+      prepareToCreateFunctionContents(func);
       if (func->imported()) {
         // We can't allow extra imports, as the fuzzing infrastructure wouldn't
         // know what to provide.
         func->module = func->base = Name();
         func->body = make(func->sig.results);
       }
-      prepareToCreateFunctionContents(func);
       // Optionally, fuzz the function contents.
       if (upTo(RESOLUTION) >= chance) {
         dropToLog(func);
