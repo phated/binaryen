@@ -426,6 +426,16 @@ private:
     // Avoid that, so that all the standard fuzzing infrastructure still works
     // (and does not fail on not providing an import).
     for (auto& global : wasm.globals) {
+      if (!global->imported()) {
+        // If the initialization referred to an imported global, it no longer
+        // can point to the same global after we make it a non-imported global
+        // (as wasm doesn't allow that - you can only use an imported one).
+        if (global->init->is<GlobalGet>()) {
+          global->init = makeConst(global->type);
+        }
+      }
+    }
+    for (auto& global : wasm.globals) {
       if (global->imported()) {
         global->module = global->base = Name();
         global->init = makeConst(global->type);
