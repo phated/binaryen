@@ -886,6 +886,9 @@ private:
       // finish so that we add hang limit protection and other general things.
       finishCreatingFunctionContents();
     }
+    // Remove a start function - the fuzzing harness expects code to run only
+    // from exports.
+    wasm.start = Name();
   }
 
   // Initial wasm contents may have come from a test that uses the drop pattern:
