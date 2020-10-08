@@ -464,6 +464,10 @@ private:
     wasm.table.initial = std::max(wasm.table.initial, (Address)wasm.table.segments[0].data.size());
     wasm.table.max =
       oneIn(2) ? Address(Table::kUnlimitedSize) : wasm.table.initial;
+    // If there were initial wasm contents, the table may be imported. Avoid
+    // that, so that all the standard fuzzing infrastructure still works (and
+    // does not fail on not providing an import).
+    wasm.table.module = wasm.table.base = Name();
   }
 
   const Name HANG_LIMIT_GLOBAL = "hangLimit";
