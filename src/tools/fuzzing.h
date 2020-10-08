@@ -484,6 +484,14 @@ private:
 
   void finalizeTable() {
     for (auto& segment : wasm.table.segments) {
+      // If the offset is a global that was imported (which is ok) but no
+      // longer is (not ok) we need to change that.
+      if (auto* offset = segment.offset->dynCast<GlobalGet>()) {
+        if (!wasm.getGlobal(offset->name)->imported()) {
+          // TODO: the segments must not overlap...
+          segment.offset = builder.makeConst(Literal::makeFromInt32(0, Type::i32));
+        }
+      }
       Address maxOffset = segment.data.size();
       if (auto* offset = segment.offset->dynCast<Const>()) {
         maxOffset = maxOffset + offset->value.getInteger();
