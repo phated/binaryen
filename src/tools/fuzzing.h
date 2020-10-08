@@ -486,8 +486,11 @@ private:
       wasm.memory.initial = std::max(wasm.memory.initial, Address((maxOffset + Memory::kPageSize - 1) / Memory::kPageSize));
     }
     wasm.memory.initial = std::max(wasm.memory.initial, USABLE_MEMORY);
-    if (wasm.memory.max < wasm.memory.initial) {
-      wasm.memory.max = wasm.memory.initial;
+    if (wasm.memory.max <= wasm.memory.initial) {
+      // To allow growth to work (which a testcase may assume), try to make the
+      // maximum larger than the initial.
+      // TODO: scan the wasm for grow instructions?
+      wasm.memory.max = std::min(Address(wasm.memory.initial + 1), Address(Memory::kMaxSize32));
     }
     // Shared memories must have a maximum size. This change may be needed if
     // we have an initial memory with no maximum, and then add an atomic
