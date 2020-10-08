@@ -484,12 +484,11 @@ private:
 
   void finalizeTable() {
     for (auto& segment : wasm.table.segments) {
-      Address constantOffset = 0;
-      if (auto* offset = segment.init->dynCast<Const>()) {
-        constantOffset = offset->value.getInteger();
+      Address maxOffset = segment.data.size();
+      if (auto* offset = segment.offset->dynCast<Const>()) {
+        maxOffset = maxOffset + offset->value.getInteger();
       }
-      wasm.table.initial =
-        std::max(wasm.table.initial, constantOffset + segment.data.size());
+      wasm.table.initial = std::max(wasm.table.initial, maxOffset);
     }
     wasm.table.max =
       oneIn(2) ? Address(Table::kUnlimitedSize) : wasm.table.initial;
