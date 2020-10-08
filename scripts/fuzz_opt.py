@@ -713,10 +713,11 @@ ignored_tests = set([
     'resizing64.wast',  # fuzzer doesn't support wasm64 yet
 ])
 
+
 def pick_initial_contents():
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
-    print('initial contents:', test_name) # XXX
+    print('initial contents:', test_name)
     # some tests are ignored
     if os.path.basename(test_name) in ignored_tests:
         return None
@@ -745,7 +746,7 @@ def pick_initial_contents():
     # error. test the wasm.
     try:
         run([in_bin('wasm-opt'), test_name] + FEATURE_OPTS, stderr=subprocess.PIPE)
-    except Exception as e:
+    except Exception:
         print('(initial contents not valid for features)')
         return None
 
