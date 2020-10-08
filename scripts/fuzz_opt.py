@@ -753,6 +753,9 @@ def pick_initial_contents():
     FEATURE_OPTS += [
         '--disable-multivalue',
         '--disable-memory64',
+        # exceptions don't work with flatten yet
+        # TODO: disable flatten when exceptions are enabled
+        '--disable-exception-handling',
     ]
 
     # the given wasm may not work with the chosen feature opts. for example, if
