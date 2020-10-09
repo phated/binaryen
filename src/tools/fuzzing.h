@@ -196,8 +196,8 @@ public:
     if (wasm.features.hasExceptionHandling()) {
       setupEvents();
     }
-    addImportLoggingSupport();
     modifyInitialFunctions();
+    addImportLoggingSupport();
     // keep adding functions until we run out of input
     while (!finishedInput) {
       auto* func = addFunction();
