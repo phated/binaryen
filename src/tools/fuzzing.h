@@ -527,24 +527,31 @@ private:
   const Name HANG_LIMIT_GLOBAL = "hangLimit";
 
   void addHangLimitSupport() {
-    auto* glob = builder.makeGlobal(HANG_LIMIT_GLOBAL,
-                                    Type::i32,
-                                    builder.makeConst(int32_t(HANG_LIMIT)),
-                                    Builder::Mutable);
-    wasm.addGlobal(glob);
+    if (!wasm.getGlobalOrNull(HANG_LIMIT_GLOBAL)) {
+      auto* glob = builder.makeGlobal(HANG_LIMIT_GLOBAL,
+                                      Type::i32,
+                                      builder.makeConst(int32_t(HANG_LIMIT)),
+                                      Builder::Mutable);
+      wasm.addGlobal(glob);
+    }
 
-    auto* func = new Function;
-    func->name = "hangLimitInitializer";
-    func->sig = Signature(Type::none, Type::none);
-    func->body =
-      builder.makeGlobalSet(glob->name, builder.makeConst(int32_t(HANG_LIMIT)));
-    wasm.addFunction(func);
+    Name funcName = "hangLimitInitializer";
+    if (!wasm.getFunctionOrNull(funcName)) {
+      auto* func = new Function;
+      func->name = funcName;
+      func->sig = Signature(Type::none, Type::none);
+      func->body =
+        builder.makeGlobalSet(HANG_LIMIT_GLOBAL, builder.makeConst(int32_t(HANG_LIMIT)));
+      wasm.addFunction(func);
 
-    auto* export_ = new Export;
-    export_->name = func->name;
-    export_->value = func->name;
-    export_->kind = ExternalKind::Function;
-    wasm.addExport(export_);
+      if (!wasm.getExportOrNull(funcName)) {
+        auto* export_ = new Export;
+        export_->name = func->name;
+        export_->value = func->name;
+        export_->kind = ExternalKind::Function;
+        wasm.addExport(export_);
+      }
+    }
   }
 
   void addImportLoggingSupport() {

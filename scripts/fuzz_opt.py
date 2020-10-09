@@ -731,7 +731,7 @@ def pick_initial_contents():
     INITIAL_CONTENTS = None
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
-    if random.random() < 0.5:
+    if random.random() < 0.5: # FIXME
         test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
     print('initial contents:', test_name)
     assert os.path.exists(test_name)
@@ -754,6 +754,9 @@ def pick_initial_contents():
         if len(split_parts) > 1:
             chosen = random.choice(split_parts)
             module, asserts = chosen
+            if not module:
+                # there is no module in this choice (just asserts), ignore it
+                return
             test_name = 'initial.wat'
             with open(test_name, 'w') as f:
                 f.write(module)
