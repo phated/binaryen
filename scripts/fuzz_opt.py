@@ -769,9 +769,6 @@ def pick_initial_contents():
     FEATURE_OPTS += [
         '--disable-multivalue',
         '--disable-memory64',
-        # exceptions don't work with flatten yet
-        # TODO: disable flatten when exceptions are enabled
-        '--disable-exception-handling',
     ]
 
     # the given wasm may not work with the chosen feature opts. for example, if
@@ -789,10 +786,12 @@ def pick_initial_contents():
 
 
 # Do one test, given an input file for -ttf and some optimizations to run
-def test_one(random_input, opts, given_wasm):
+def test_one(random_input, given_wasm):
     randomize_pass_debug()
     randomize_feature_opts()
     randomize_fuzz_settings()
+    opts = randomize_opt_flags()
+    print('randomized opts:', ' '.join(opts))
     print()
 
     # we may add fuzzing on top of an initial test file from our test suite.
@@ -934,6 +933,9 @@ def randomize_opt_flags():
     while 1:
         choice = random.choice(opt_choices)
         if '--flatten' in choice:
+            if '--disable-exception-handling' not in FEATURE_OPTS:
+                print('avoiding --flatten due to exception catching which does not support it yet')
+                continue
             if has_flatten:
                 print('avoiding multiple --flatten in a single command, due to exponential overhead')
                 continue
@@ -1018,10 +1020,8 @@ if __name__ == '__main__':
         with open(raw_input_data, 'wb') as f:
             f.write(bytes([random.randint(0, 255) for x in range(input_size)]))
         assert os.path.getsize(raw_input_data) == input_size
-        opts = randomize_opt_flags()
-        print('randomized opts:', ' '.join(opts))
         try:
-            total_wasm_size += test_one(raw_input_data, opts, given_wasm)
+            total_wasm_size += test_one(raw_input_data, given_wasm)
         except KeyboardInterrupt:
             print('(stopping by user request)')
             break
