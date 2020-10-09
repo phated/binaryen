@@ -646,6 +646,12 @@ class Wasm2JS(TestCaseHandler):
         return run_vm([shared.NODEJS, js_file, 'a.wasm'])
 
     def can_run_on_feature_opts(self, feature_opts):
+        # TODO: properly handle memory growth. right now the wasm2js handler
+        # uses --emscripten which assumes the Memory is created before, and
+        # wasm2js.js just starts with a size of 1 and no limit. We should switch
+        # to non-emscripten mode or adding memory information
+        if INITIAL_CONTENTS:
+            return False
         return all([x in feature_opts for x in ['--disable-exception-handling', '--disable-simd', '--disable-threads', '--disable-bulk-memory', '--disable-nontrapping-float-to-int', '--disable-tail-call', '--disable-sign-ext', '--disable-reference-types', '--disable-multivalue', '--disable-gc']])
 
 
