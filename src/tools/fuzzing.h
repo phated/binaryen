@@ -459,11 +459,14 @@ private:
   void setupEvents() {
     Index num = upTo(3);
     for (size_t i = 0; i < num; i++) {
-      auto* event =
-        builder.makeEvent(std::string("event$") + std::to_string(i),
-                          WASM_EVENT_ATTRIBUTE_EXCEPTION,
-                          Signature(getControlFlowType(), Type::none));
-      wasm.addEvent(event);
+      auto name = std::string("event$") + std::to_string(i);
+      if (!wasm.getEventOrNull(name)) {
+        auto* event =
+          builder.makeEvent(name,
+                            WASM_EVENT_ATTRIBUTE_EXCEPTION,
+                            Signature(getControlFlowType(), Type::none));
+        wasm.addEvent(event);
+      }
     }
   }
 
