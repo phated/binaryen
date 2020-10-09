@@ -479,21 +479,25 @@ private:
         if (auto* offset = segment.offset->dynCast<GlobalGet>()) {
           if (!wasm.getGlobal(offset->name)->imported()) {
             // TODO: the segments must not overlap...
-            segment.offset = builder.makeConst(Literal::makeFromInt32(0, Type::i32));
+            segment.offset =
+              builder.makeConst(Literal::makeFromInt32(0, Type::i32));
           }
         }
         if (auto* offset = segment.offset->dynCast<Const>()) {
           maxOffset = maxOffset + offset->value.getInteger();
         }
       }
-      wasm.memory.initial = std::max(wasm.memory.initial, Address((maxOffset + Memory::kPageSize - 1) / Memory::kPageSize));
+      wasm.memory.initial = std::max(
+        wasm.memory.initial,
+        Address((maxOffset + Memory::kPageSize - 1) / Memory::kPageSize));
     }
     wasm.memory.initial = std::max(wasm.memory.initial, USABLE_MEMORY);
     if (wasm.memory.max <= wasm.memory.initial) {
       // To allow growth to work (which a testcase may assume), try to make the
       // maximum larger than the initial.
       // TODO: scan the wasm for grow instructions?
-      wasm.memory.max = std::min(Address(wasm.memory.initial + 1), Address(Memory::kMaxSize32));
+      wasm.memory.max =
+        std::min(Address(wasm.memory.initial + 1), Address(Memory::kMaxSize32));
     }
     // Shared memories must have a maximum size. This change may be needed if
     // we have an initial memory with no maximum, and then add an atomic
@@ -512,7 +516,8 @@ private:
       if (auto* offset = segment.offset->dynCast<GlobalGet>()) {
         if (!wasm.getGlobal(offset->name)->imported()) {
           // TODO: the segments must not overlap...
-          segment.offset = builder.makeConst(Literal::makeFromInt32(0, Type::i32));
+          segment.offset =
+            builder.makeConst(Literal::makeFromInt32(0, Type::i32));
         }
       }
       Address maxOffset = segment.data.size();
@@ -543,8 +548,8 @@ private:
       auto* func = new Function;
       func->name = funcName;
       func->sig = Signature(Type::none, Type::none);
-      func->body =
-        builder.makeGlobalSet(HANG_LIMIT_GLOBAL, builder.makeConst(int32_t(HANG_LIMIT)));
+      func->body = builder.makeGlobalSet(
+        HANG_LIMIT_GLOBAL, builder.makeConst(int32_t(HANG_LIMIT)));
       wasm.addFunction(func);
 
       if (!wasm.getExportOrNull(funcName)) {
