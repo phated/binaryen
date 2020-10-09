@@ -747,8 +747,10 @@ def pick_initial_contents():
         'names.wast',
         # huge amount of locals that make it extremely slow
         'too_much_for_liveness.wasm',
+        # these contain illegal pops()
         # https://github.com/WebAssembly/binaryen/issues/3213
         'instrument-locals_all-features.wast',
+        'remove-unused-names_code-folding_all-features.wast',
     ]:
         return
 
@@ -932,7 +934,7 @@ def randomize_opt_flags():
     # core opts
     while 1:
         choice = random.choice(opt_choices)
-        if '--flatten' in choice:
+        if '--flatten' in choice or '-O4' in choice:
             if has_flatten:
                 print('avoiding multiple --flatten in a single command, due to exponential overhead')
                 continue
