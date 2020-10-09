@@ -792,14 +792,11 @@ def test_one(random_input, given_wasm):
     randomize_pass_debug()
     randomize_feature_opts()
     randomize_fuzz_settings()
+    pick_initial_contents()
+
     opts = randomize_opt_flags()
     print('randomized opts:', ' '.join(opts))
     print()
-
-    # we may add fuzzing on top of an initial test file from our test suite.
-    # pick that first, even if we don't apply it, so randomization does not
-    # change when given_wasm != None
-    pick_initial_contents()
 
     if given_wasm:
         # if given a wasm file we want to use it as is, but we also want to
@@ -935,11 +932,14 @@ def randomize_opt_flags():
     while 1:
         choice = random.choice(opt_choices)
         if '--flatten' in choice:
+            if has_flatten:
+                print('avoiding multiple --flatten in a single command, due to exponential overhead')
+                continue
             if '--disable-exception-handling' not in FEATURE_OPTS:
                 print('avoiding --flatten due to exception catching which does not support it yet')
                 continue
-            if has_flatten:
-                print('avoiding multiple --flatten in a single command, due to exponential overhead')
+            if INITIAL_CONTENTS and os.path.getsize(INITIAL_CONTENTS) > 2000:
+                print('avoiding --flatten due using a large amount of initial contents, which may blow up')
                 continue
             else:
                 has_flatten = True
