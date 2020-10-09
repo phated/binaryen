@@ -1744,10 +1744,10 @@ private:
       // +- 1
       switch (upTo(5)) {
         case 0:
-          value = value.add(Literal::makeFromInt32(-1, type));
+          value = value.add(Literal::makeNegOne(type));
           break;
         case 1:
-          value = value.add(Literal::makeFromInt32(1, type));
+          value = value.add(Literal::makeOne(type));
           break;
         default: {
         }
@@ -1766,7 +1766,7 @@ private:
       }
       // Flip sign.
       if (oneIn(2)) {
-        value = value.mul(Literal::makeFromInt32(-1, type));
+        value = value.mul(Literal::makeNegOne(type));
       }
       return value;
     };
