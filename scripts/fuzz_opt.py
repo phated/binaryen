@@ -745,6 +745,8 @@ def pick_initial_contents():
         'simd.wast',
         # corner cases of escaping of names is not interesting
         'names.wast',
+        # huge amount of locals that make it extremely slow
+        'too_much_for_liveness.wasm',
     ]:
         return
 
