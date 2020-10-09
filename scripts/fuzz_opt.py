@@ -105,12 +105,11 @@ def no_pass_debug():
 def randomize_feature_opts():
     global FEATURE_OPTS
     FEATURE_OPTS = CONSTANT_FEATURE_OPTS[:]
-    # half the time apply all the possible opts. this lets all test runners work at max
-    # capacity at least half the time, as otherwise if they need almost all the opts, the
-    # chance of getting them is exponentially small.
-    if random.random() < 0.5:
+    # 1/3 the time apply all the possible opts, 1/3 none of them, to maximize
+    # coverage both ways, and 1/3 pick each one randomly
+    if random.random() < 0.33333:
         FEATURE_OPTS += POSSIBLE_FEATURE_OPTS
-    else:
+    elif random.random() < 0.33333:
         for possible in POSSIBLE_FEATURE_OPTS:
             if random.random() < 0.5:
                 FEATURE_OPTS.append(possible)
@@ -649,7 +648,8 @@ class Wasm2JS(TestCaseHandler):
         # TODO: properly handle memory growth. right now the wasm2js handler
         # uses --emscripten which assumes the Memory is created before, and
         # wasm2js.js just starts with a size of 1 and no limit. We should switch
-        # to non-emscripten mode or adding memory information
+        # to non-emscripten mode or adding memory information, or check
+        # specifically for growth here
         if INITIAL_CONTENTS:
             return False
         return all([x in feature_opts for x in ['--disable-exception-handling', '--disable-simd', '--disable-threads', '--disable-bulk-memory', '--disable-nontrapping-float-to-int', '--disable-tail-call', '--disable-sign-ext', '--disable-reference-types', '--disable-multivalue', '--disable-gc']])
@@ -731,7 +731,10 @@ def pick_initial_contents():
     INITIAL_CONTENTS = None
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
+    if random.random() < 0.5:
+        test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
     print('initial contents:', test_name)
+    assert os.path.exists(test_name)
     # tests that check validation errors are not helpful for us
     if '.fail.' in test_name:
         return
@@ -740,6 +743,8 @@ def pick_initial_contents():
         'limit-segments_disable-bulk-memory.wast',
         # https://github.com/WebAssembly/binaryen/issues/3203
         'simd.wast',
+        # corner cases of escaping of names is not interesting
+        'names.wast',
     ]:
         return
 
