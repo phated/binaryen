@@ -155,12 +155,6 @@ struct OptimizeInstructions
 
   Pass* create() override { return new OptimizeInstructions; }
 
-  void prepareToRun(PassRunner* runner, Module* module) override {
-#if 0
-    static DatabaseEnsurer ensurer;
-#endif
-  }
-
   bool fastMath;
 
   void doWalkFunction(Function* func) {
@@ -185,24 +179,7 @@ struct OptimizeInstructions
         replaceCurrent(curr);
         continue;
       }
-#if 0
-      auto iter = database->patternMap.find(curr->_id);
-      if (iter == database->patternMap.end()) return;
-      auto& patterns = iter->second;
-      bool more = false;
-      for (auto& pattern : patterns) {
-        Match match(*getModule(), pattern);
-        if (match.check(curr)) {
-          curr = match.apply();
-          replaceCurrent(curr);
-          more = true;
-          break; // exit pattern for loop, return to main while loop
-        }
-      }
-      if (!more) break;
-#else
       break;
-#endif
     }
   }
 
@@ -348,6 +325,41 @@ struct OptimizeInstructions
           inner->op = EqZInt64;
           inner->value = x;
           return inner;
+        }
+      }
+      {
+        // x <<>> (C & (31 | 63))   ==>   x <<>> C'
+        // x <<>> (y & (31 | 63))   ==>   x <<>> y
+        // where '<<>>':
+        //   '<<', '>>', '>>>'. 'rotl' or 'rotr'
+        BinaryOp op;
+        Const* c;
+        Expression *x, *y;
+
+        // x <<>> C
+        if (matches(curr, binary(&op, any(&x), ival(&c))) &&
+            Abstract::hasAnyShift(op)) {
+          // truncate RHS constant to effective size as:
+          // i32(x) <<>> const(C & 31))
+          // i64(x) <<>> const(C & 63))
+          c->value = c->value.and_(
+            Literal::makeFromInt32(c->type.getByteSize() * 8 - 1, c->type));
+          // x <<>> 0   ==>   x
+          if (c->value.isZero()) {
+            return x;
+          }
+        }
+        if (matches(
+              curr,
+              binary(&op, any(&x), binary(Abstract::And, any(&y), ival(&c)))) &&
+            Abstract::hasAnyShift(op)) {
+          // i32(x) <<>> (y & 31)   ==>   x <<>> y
+          // i64(x) <<>> (y & 63)   ==>   x <<>> y
+          if ((c->type == Type::i32 && (c->value.geti32() & 31) == 31) ||
+              (c->type == Type::i64 && (c->value.geti64() & 63LL) == 63LL)) {
+            curr->cast<Binary>()->right = y;
+            return curr;
+          }
         }
       }
     }
