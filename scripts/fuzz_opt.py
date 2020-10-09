@@ -747,6 +747,8 @@ def pick_initial_contents():
         'names.wast',
         # huge amount of locals that make it extremely slow
         'too_much_for_liveness.wasm',
+        # https://github.com/WebAssembly/binaryen/issues/3213
+        'instrument-locals_all-features.wast',
     ]:
         return
 
