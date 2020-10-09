@@ -663,7 +663,7 @@ private:
     wasm.addFunction(func);
     // export some, but not all (to allow inlining etc.). make sure to
     // export at least one, though, to keep each testcase interesting
-    if (num == 0 || oneIn(2)) {
+    if ((num == 0 || oneIn(2)) && !wasm.getExportOrNull(func->name)) {
       auto* export_ = new Export;
       export_->name = func->name;
       export_->value = func->name;
