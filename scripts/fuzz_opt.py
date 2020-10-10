@@ -731,7 +731,7 @@ def pick_initial_contents():
     INITIAL_CONTENTS = None
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
-    if random.random() < 0.5: # FIXME
+    if random.random() < 0.1: # FIXME
         test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
     print('initial contents:', test_name)
     assert os.path.exists(test_name)

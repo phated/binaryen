@@ -756,9 +756,10 @@ private:
         if (parent.oneIn(10)) {
           // Replace it!
           auto& candidates = scanner.exprsByType[curr->type];
-          assert(!candidates.empty()); // this expression itself must be there
-          replaceCurrent(
-            ExpressionManipulator::copy(parent.pick(candidates), wasm));
+          if (!candidates.empty()) {
+            replaceCurrent(
+              ExpressionManipulator::copy(parent.pick(candidates), wasm));
+          }
         }
       }
     };
