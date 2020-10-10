@@ -183,6 +183,8 @@ void MemoryPacking::run(PassRunner* runner, Module* module) {
 }
 
 bool MemoryPacking::canOptimize(const std::vector<Memory::Segment>& segments) {
+  // One segment is always ok to optimize, as it does not have the potential
+  // problems handled below.
   if (segments.size() <= 1) {
     return true;
   }
@@ -205,7 +207,9 @@ bool MemoryPacking::canOptimize(const std::vector<Memory::Segment>& segments) {
       //
       // then we can't tell if that last segment will end up overwriting or not.
       // The only case we can easily handle is if there is just a single
-      // segment, which we handled earlier.
+      // segment, which we handled earlier. (Note that that includes the main
+      // case of having a non-constant offset, dynamic linking, in which we have
+      // a single segment.)
       return false;
     }
   }
