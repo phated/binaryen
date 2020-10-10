@@ -953,6 +953,10 @@ private:
   // across invocations from JS or wasm-opt etc.). Add invocations in
   // the wasm, so they run everywhere
   void addInvocations(Function* func) {
+    Name name = func->name.str + std::string("_invoker");
+    if (wasm.getFunctionOrNull(name) || wasm.getExportOrNull(name)) {
+      return;
+    }
     std::vector<Expression*> invocations;
     while (oneIn(2) && !finishedInput) {
       std::vector<Expression*> args;
@@ -974,13 +978,13 @@ private:
       return;
     }
     auto* invoker = new Function;
-    invoker->name = func->name.str + std::string("_invoker");
+    invoker->name = name;
     invoker->sig = Signature(Type::none, Type::none);
     invoker->body = builder.makeBlock(invocations);
     wasm.addFunction(invoker);
     auto* export_ = new Export;
-    export_->name = invoker->name;
-    export_->value = invoker->name;
+    export_->name = name;
+    export_->value = name;
     export_->kind = ExternalKind::Function;
     wasm.addExport(export_);
   }
