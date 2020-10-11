@@ -728,23 +728,19 @@ lld_tests = shared.get_tests(shared.get_test_dir('lld'), test_suffixes)
 unit_tests = shared.get_tests(shared.get_test_dir(os.path.join('unit', 'input')), test_suffixes)
 all_tests = core_tests + passes_tests + spec_tests + wasm2js_tests + lld_tests + unit_tests
 
-waka = 0 # FIXME
 
 def pick_initial_contents():
-    global waka # FIXME
     global INITIAL_CONTENTS
     INITIAL_CONTENTS = None
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
-    #print('waka', waka, len(all_tests))
-    #test_name = all_tests[waka % len(all_tests)] # FIXME
-    #waka += 1 # FIXME
     if random.random() < 0.1: # FIXME
         test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
     print('initial contents:', test_name)
     assert os.path.exists(test_name)
     # tests that check validation errors are not helpful for us
     if '.fail.' in test_name:
+        print('initial contents is just a .fail test')
         return
     if os.path.basename(test_name) in [
         # contains too many segments to run in a wasm VM
@@ -761,6 +757,7 @@ def pick_initial_contents():
         'remove-unused-names_code-folding_all-features.wast',
         'Os_print-stack-ir_all-features.wast'
     ]:
+        print('initial contents is disallowed')
         return
 
     if test_name.endswith('.wast'):
@@ -771,6 +768,7 @@ def pick_initial_contents():
             module, asserts = chosen
             if not module:
                 # there is no module in this choice (just asserts), ignore it
+                print('initial contents has no module')
                 return
             test_name = 'initial.wat'
             with open(test_name, 'w') as f:
