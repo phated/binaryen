@@ -443,7 +443,11 @@ class CompareVMs(TestCaseHandler):
             def run(self, wasm):
                 run([in_bin('wasm-opt'), wasm, '--emit-wasm2c-wrapper=main.c'] + FEATURE_OPTS)
                 run(['wasm2c', wasm, '-o', 'wasm.c'])
-                compile_cmd = ['emcc', 'main.c', 'wasm.c', os.path.join(self.wasm2c_dir, 'wasm-rt-impl.c'), '-I' + self.wasm2c_dir, '-lm']
+                compile_cmd = ['emcc', 'main.c', 'wasm.c',
+                               os.path.join(self.wasm2c_dir, 'wasm-rt-impl.c'),
+                               '-I' + self.wasm2c_dir,
+                               '-lm',
+                               '-s', 'ALLOW_MEMORY_GROWTH']
                 # disable the signal handler: emcc looks like unix, but wasm has
                 # no signals
                 compile_cmd += ['-DWASM_RT_MEMCHECK_SIGNAL_HANDLER=0']
@@ -734,8 +738,6 @@ def pick_initial_contents():
     INITIAL_CONTENTS = None
     #  TODO 0.5 for None
     test_name = random.choice(all_tests)
-    if random.random() < 0.1: # FIXME
-        test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
     print('initial contents:', test_name)
     assert os.path.exists(test_name)
     # tests that check validation errors are not helpful for us
