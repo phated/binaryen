@@ -723,7 +723,10 @@ test_suffixes = ['*.wasm', '*.wast', '*.wat']
 core_tests = shared.get_tests(shared.get_test_dir('.'), test_suffixes)
 passes_tests = shared.get_tests(shared.get_test_dir('passes'), test_suffixes)
 spec_tests = shared.get_tests(shared.get_test_dir('spec'), test_suffixes)
-all_tests = core_tests + passes_tests + spec_tests
+wasm2js_tests = shared.get_tests(shared.get_test_dir('wasm2js'), test_suffixes)
+lld_tests = shared.get_tests(shared.get_test_dir('lld'), test_suffixes)
+unit_tests = shared.get_tests(shared.get_test_dir(os.path.join('unit', 'input')), test_suffixes)
+all_tests = core_tests + passes_tests + spec_tests + wasm2js_tests + lld_tests + unit_tests
 
 waka = 0 # FIXME
 
