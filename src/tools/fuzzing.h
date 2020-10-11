@@ -618,9 +618,12 @@ private:
 
   Function* addFunction() {
     LOGGING_PERCENT = upToSquared(100);
-    Index num = wasm.functions.size();
     func = new Function;
-    func->name = std::string("func_") + std::to_string(num);
+    Index num = wasm.functions.size();
+    do {
+      func->name = std::string("func_") + std::to_string(num);
+      num++;
+    } while (wasm.getFunctionOrNull(func->name));
     assert(typeLocals.empty());
     Index numParams = upToSquared(MAX_PARAMS);
     std::vector<Type> params;
