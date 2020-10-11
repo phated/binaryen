@@ -756,6 +756,7 @@ def pick_initial_contents():
         # https://github.com/WebAssembly/binaryen/issues/3213
         'instrument-locals_all-features.wast',
         'remove-unused-names_code-folding_all-features.wast',
+        'Os_print-stack-ir_all-features.wast'
     ]:
         return
 
