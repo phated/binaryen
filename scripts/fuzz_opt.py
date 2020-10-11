@@ -732,12 +732,12 @@ def pick_initial_contents():
     global INITIAL_CONTENTS
     INITIAL_CONTENTS = None
     #  TODO 0.5 for None
-    # FIXME test_name = random.choice(all_tests)
-    print('waka', waka, len(all_tests))
-    test_name = all_tests[waka % len(all_tests)] # FIXME
-    waka += 1 # FIXME
-    #if random.random() < 0.05: # FIXME
-    #    test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
+    test_name = random.choice(all_tests)
+    #print('waka', waka, len(all_tests))
+    #test_name = all_tests[waka % len(all_tests)] # FIXME
+    #waka += 1 # FIXME
+    if random.random() < 0.05: # FIXME
+        test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
     print('initial contents:', test_name)
     assert os.path.exists(test_name)
     # tests that check validation errors are not helpful for us
@@ -773,12 +773,11 @@ def pick_initial_contents():
                 f.write(module)
             print('  picked submodule of wast, of size', len(module))
 
-    # disable features that don't work on a significant amount of the test
-    # suite, such as DWARF rewriting not working with multivalue
     global FEATURE_OPTS
     FEATURE_OPTS += [
-        '--disable-multivalue',
-        '--disable-memory64',
+        # DWARF is incompatible with multivalue atm; it's more important to
+        # fuzz multivalue since we aren't actually fuzzing DWARF here
+        '--strip-dwarf',
     ]
 
     # the given wasm may not work with the chosen feature opts. for example, if
