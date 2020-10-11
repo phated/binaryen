@@ -500,10 +500,9 @@ private:
       wasm.memory.max =
         std::min(Address(wasm.memory.initial + 1), Address(Memory::kMaxSize32));
     }
-    // Shared memories must have a maximum size. This change may be needed if
-    // we have an initial memory with no maximum, and then add an atomic
-    // instruction, which would make us change the memory to shared.
-    if (wasm.memory.shared && wasm.memory.max == Memory::kUnlimitedSize) {
+    // Avoid an unlimited memory size, which would make fuzzing very difficult
+    // as different VMs will run out of system memory in different ways.
+    if (wasm.memory.max == Memory::kUnlimitedSize) {
       wasm.memory.max = wasm.memory.initial;
     }
     // See above for globals.
