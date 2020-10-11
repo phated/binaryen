@@ -739,7 +739,7 @@ def pick_initial_contents():
     #print('waka', waka, len(all_tests))
     #test_name = all_tests[waka % len(all_tests)] # FIXME
     #waka += 1 # FIXME
-    if random.random() < 0.05: # FIXME
+    if random.random() < 0.1: # FIXME
         test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
     print('initial contents:', test_name)
     assert os.path.exists(test_name)
