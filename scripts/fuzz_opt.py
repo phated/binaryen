@@ -725,14 +725,19 @@ passes_tests = shared.get_tests(shared.get_test_dir('passes'), test_suffixes)
 spec_tests = shared.get_tests(shared.get_test_dir('spec'), test_suffixes)
 all_tests = core_tests + passes_tests + spec_tests
 
+waka = 0 # FIXME
 
 def pick_initial_contents():
+    global waka # FIXME
     global INITIAL_CONTENTS
     INITIAL_CONTENTS = None
     #  TODO 0.5 for None
-    test_name = random.choice(all_tests)
-    if random.random() < 0.1: # FIXME
-        test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
+    # FIXME test_name = random.choice(all_tests)
+    print('waka', waka, len(all_tests))
+    test_name = all_tests[waka % len(all_tests)] # FIXME
+    waka += 1 # FIXME
+    #if random.random() < 0.05: # FIXME
+    #    test_name = '/home/azakai/Dev/binaryen/test/passes/optimize-instructions_all-features.wast'
     print('initial contents:', test_name)
     assert os.path.exists(test_name)
     # tests that check validation errors are not helpful for us
