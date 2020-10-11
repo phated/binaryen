@@ -1714,6 +1714,10 @@ private:
   // Makes a small change to a constant value.
   Literal tweak(Literal value) {
     auto type = value.type;
+    if (type.isVector()) {
+      // TODO: tweak each lane?
+      return value;
+    }
     // +- 1
     switch (upTo(5)) {
       case 0:
