@@ -779,6 +779,8 @@ def pick_initial_contents():
 
     global FEATURE_OPTS
     FEATURE_OPTS += [
+        # has not been enabled in the fuzzer yet
+        '--disable-exception-handling,
         # has not been fuzzed in general yet
         '--disable-memory64',
         # DWARF is incompatible with multivalue atm; it's more important to
