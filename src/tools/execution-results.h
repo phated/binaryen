@@ -51,7 +51,7 @@ struct LoggingExternalInterface : public ShellExternalInterface {
         return {};
       }
     }
-    std::cout << "[LoggingExternalInterface ignoring an unknown import " << import->module << " . " << import->base << '\n';
+    std::cerr << "[LoggingExternalInterface ignoring an unknown import " << import->module << " . " << import->base << '\n';
     return {};
   }
 };
