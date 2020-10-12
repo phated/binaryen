@@ -40,7 +40,18 @@ struct LoggingExternalInterface : public ShellExternalInterface {
         loggings.push_back(argument);
       }
       std::cout << "]\n";
+      return {};
+    } else if (import->module == ENV) {
+      if (import->base == "log_execution") {
+        std::cout << "[LoggingExternalInterface log-execution";
+        for (auto argument : arguments) {
+          std::cout << ' ' << argument;
+        }
+        std::cout << "]\n";
+        return {};
+      }
     }
+    std::cout << "[LoggingExternalInterface ignoring an unknown import " << import->module << " . " << import->base << '\n';
     return {};
   }
 };
