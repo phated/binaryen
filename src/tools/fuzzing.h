@@ -1451,9 +1451,7 @@ private:
 
   // Some globals are for internal use, and should not be modified by random
   // fuzz code.
-  bool isValidGlobal(Name name) {
-    return name != HANG_LIMIT_GLOBAL;
-  }
+  bool isValidGlobal(Name name) { return name != HANG_LIMIT_GLOBAL; }
 
   Expression* makeGlobalGet(Type type) {
     auto it = globalsByType.find(type);
