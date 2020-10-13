@@ -537,7 +537,7 @@ private:
 
   // Given a root of a name, finds a valid name with perhaps a number appended
   // to it, by calling a function to check if a name is valid.
-  Name getValidName(Name root, std::function<bool (Name)> check) {
+  Name getValidName(Name root, std::function<bool(Name)> check) {
     if (check(root)) {
       return root;
     }
@@ -555,11 +555,11 @@ private:
   Name HANG_LIMIT_GLOBAL;
 
   void prepareHangLimitSupport() {
-    
+    HANG_LIMIT_GLOBAL = getValidName(
+      "hangLimit", [&](Name name) { return !wasm.getGlobalOrNull(name); });
+  }
+
   void addHangLimitSupport() {
-    HANG_LIMIT_GLOBAL = getValidName("hangLimit", [&](Name name) {
-      return !wasm.getGlobalOrNull(name);
-    });
     auto* glob = builder.makeGlobal(HANG_LIMIT_GLOBAL,
                                     Type::i32,
                                     builder.makeConst(int32_t(HANG_LIMIT)),
@@ -567,14 +567,13 @@ private:
     wasm.addGlobal(glob);
 
     Name exportName = "hangLimitInitializer";
-    auto funcName = getValidName(exportName, [&](Name name) {
-      return !wasm.getFunctionOrNull(name);
-    });
+    auto funcName = getValidName(
+      exportName, [&](Name name) { return !wasm.getFunctionOrNull(name); });
     auto* func = new Function;
     func->name = funcName;
     func->sig = Signature(Type::none, Type::none);
-    func->body = builder.makeGlobalSet(
-      HANG_LIMIT_GLOBAL, builder.makeConst(int32_t(HANG_LIMIT)));
+    func->body = builder.makeGlobalSet(HANG_LIMIT_GLOBAL,
+                                       builder.makeConst(int32_t(HANG_LIMIT)));
     wasm.addFunction(func);
 
     if (wasm.getExportOrNull(exportName)) {
@@ -643,12 +642,13 @@ private:
     assert(hangStack.empty());
   }
 
+  Index numAddedFunctions = 0;
+
   Function* addFunction() {
     LOGGING_PERCENT = upToSquared(100);
     func = new Function;
-    func->name = getValidName("func", [&](Name name) {
-      return !wasm.getFunctionOrNull(func->name);
-    });
+    func->name = getValidName(
+      "func", [&](Name name) { return !wasm.getFunctionOrNull(name); });
     assert(typeLocals.empty());
     Index numParams = upToSquared(MAX_PARAMS);
     std::vector<Type> params;
@@ -696,7 +696,8 @@ private:
     wasm.addFunction(func);
     // export some, but not all (to allow inlining etc.). make sure to
     // export at least one, though, to keep each testcase interesting
-    if ((num == 0 || oneIn(2)) && !wasm.getExportOrNull(func->name)) {
+    if ((numAddedFunctions == 0 || oneIn(2)) &&
+        !wasm.getExportOrNull(func->name)) {
       auto* export_ = new Export;
       export_->name = func->name;
       export_->value = func->name;
@@ -709,6 +710,7 @@ private:
     }
     // cleanup
     finishCreatingFunctionContents();
+    numAddedFunctions++;
     return func;
   }
 
