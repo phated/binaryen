@@ -819,6 +819,8 @@ private:
               return;
             }
           }
+          // TODO: more minor tweaks to immediates, like making a load atomic or
+          // not, changing an offset, etc.
           // Perform a general replacement.
           // (This is not always valid due to nesting of labels, but
           // we'll fix that up later.)
