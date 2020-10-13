@@ -188,6 +188,9 @@ public:
   void setAllowOOB(bool allowOOB_) { allowOOB = allowOOB_; }
 
   void build() {
+    if (HANG_LIMIT > 0) {
+      prepareHangLimitSupport();
+    }
     if (allowMemory) {
       setupMemory();
     }
@@ -532,34 +535,58 @@ private:
     wasm.table.module = wasm.table.base = Name();
   }
 
-  const Name HANG_LIMIT_GLOBAL = "hangLimit";
-
-  void addHangLimitSupport() {
-    if (!wasm.getGlobalOrNull(HANG_LIMIT_GLOBAL)) {
-      auto* glob = builder.makeGlobal(HANG_LIMIT_GLOBAL,
-                                      Type::i32,
-                                      builder.makeConst(int32_t(HANG_LIMIT)),
-                                      Builder::Mutable);
-      wasm.addGlobal(glob);
+  // Given a root of a name, finds a valid name with perhaps a number appended
+  // to it, by calling a function to check if a name is valid.
+  Name getValidName(Name root, std::function<bool (Name)> check) {
+    if (check(root)) {
+      return root;
     }
-
-    Name funcName = "hangLimitInitializer";
-    if (!wasm.getFunctionOrNull(funcName)) {
-      auto* func = new Function;
-      func->name = funcName;
-      func->sig = Signature(Type::none, Type::none);
-      func->body = builder.makeGlobalSet(
-        HANG_LIMIT_GLOBAL, builder.makeConst(int32_t(HANG_LIMIT)));
-      wasm.addFunction(func);
-
-      if (!wasm.getExportOrNull(funcName)) {
-        auto* export_ = new Export;
-        export_->name = func->name;
-        export_->value = func->name;
-        export_->kind = ExternalKind::Function;
-        wasm.addExport(export_);
+    auto prefixed = std::string(root.str) + '_';
+    Index num = 0;
+    while (1) {
+      auto name = prefixed + std::to_string(num);
+      if (check(name)) {
+        return name;
       }
+      num++;
     }
+  }
+
+  Name HANG_LIMIT_GLOBAL;
+
+  void prepareHangLimitSupport() {
+    
+  void addHangLimitSupport() {
+    HANG_LIMIT_GLOBAL = getValidName("hangLimit", [&](Name name) {
+      return !wasm.getGlobalOrNull(name);
+    });
+    auto* glob = builder.makeGlobal(HANG_LIMIT_GLOBAL,
+                                    Type::i32,
+                                    builder.makeConst(int32_t(HANG_LIMIT)),
+                                    Builder::Mutable);
+    wasm.addGlobal(glob);
+
+    Name exportName = "hangLimitInitializer";
+    auto funcName = getValidName(exportName, [&](Name name) {
+      return !wasm.getFunctionOrNull(name);
+    });
+    auto* func = new Function;
+    func->name = funcName;
+    func->sig = Signature(Type::none, Type::none);
+    func->body = builder.makeGlobalSet(
+      HANG_LIMIT_GLOBAL, builder.makeConst(int32_t(HANG_LIMIT)));
+    wasm.addFunction(func);
+
+    if (wasm.getExportOrNull(exportName)) {
+      // We must export our actual hang limit function - remove anything
+      // previously existing.
+      wasm.removeExport(exportName);
+    }
+    auto* export_ = new Export;
+    export_->name = exportName;
+    export_->value = func->name;
+    export_->kind = ExternalKind::Function;
+    wasm.addExport(export_);
   }
 
   void addImportLoggingSupport() {
@@ -619,11 +646,9 @@ private:
   Function* addFunction() {
     LOGGING_PERCENT = upToSquared(100);
     func = new Function;
-    Index num = wasm.functions.size();
-    do {
-      func->name = std::string("func_") + std::to_string(num);
-      num++;
-    } while (wasm.getFunctionOrNull(func->name));
+    func->name = getValidName("func", [&](Name name) {
+      return !wasm.getFunctionOrNull(func->name);
+    });
     assert(typeLocals.empty());
     Index numParams = upToSquared(MAX_PARAMS);
     std::vector<Type> params;
