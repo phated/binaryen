@@ -32,11 +32,14 @@
 #include "ir/module-utils.h"
 #include "ir/utils.h"
 #include "pass.h"
+#include "support/space.h"
 #include "wasm-binary.h"
 #include "wasm-builder.h"
 #include "wasm.h"
 
 namespace wasm {
+
+namespace {
 
 // A subsection of an orginal memory segment. If `isZero` is true, memory.fill
 // will be used instead of memory.init for this range.
@@ -73,8 +76,6 @@ const size_t MEMORY_FILL_SIZE = 9;
 
 // data.drop: 2 byte opcode + ~1 byte index immediate
 const size_t DATA_DROP_SIZE = 3;
-
-namespace {
 
 Expression*
 makeGtShiftedMemorySize(Builder& builder, Module& module, MemoryInit* curr) {
@@ -189,9 +190,11 @@ bool MemoryPacking::canOptimize(const std::vector<Memory::Segment>& segments) {
     return true;
   }
   // Check if it is ok for us to optimize.
+  Address maxAddress = 0;
   for (auto& segment : segments) {
-    if (!segment.isPassive && !segment.offset->is<Const>()) {
-      // An active segment has a non-constant offset, so what gets written
+    if (!segment.isPassive) {
+      auto* c = segment.offset->dynCast<Const>();
+      // If an active segment has a non-constant offset, then what gets written
       // cannot be known until runtime. That is, the active segments are written
       // out at startup, in order, and one may trample the data of another, like
       //
@@ -210,23 +213,26 @@ bool MemoryPacking::canOptimize(const std::vector<Memory::Segment>& segments) {
       // segment, which we handled earlier. (Note that that includes the main
       // case of having a non-constant offset, dynamic linking, in which we have
       // a single segment.)
-      return false;
+      if (!c) {
+        return false;
+      }
+      // Note the maximum address so far.
+      maxAddress = std::max(
+        maxAddress, Address(c->value.getInteger() + segment.data.size()));
     }
   }
   // All active segments have constant offsets, known at this time, so we may be
   // able to optimize, but must still check for the trampling problem mentioned
   // earlier.
   // TODO: optimize in the trampling case
-  std::unordered_set<Address> writtenTo;
+  DisjointSpans space;
   for (auto& segment : segments) {
     if (!segment.isPassive) {
-      Address start = segment.offset->cast<Const>()->value.getInteger();
-      for (Index i = 0; i < segment.data.size(); i++) {
-        auto address = start + i;
-        if (writtenTo.count(address)) {
-          return false;
-        }
-        writtenTo.insert(address);
+      auto* c = segment.offset->cast<Const>();
+      Address start = c->value.getInteger();
+      DisjointSpans::Span span{start, start + segment.data.size()};
+      if (space.addAndCheckOverlap(span)) {
+        return false;
       }
     }
   }
@@ -571,10 +577,16 @@ void MemoryPacking::createReplacements(Module* module,
     size_t start = init->offset->cast<Const>()->value.geti32();
     size_t end = start + init->size->cast<Const>()->value.geti32();
 
+    // Segment index used in emitted memory.init instructions
+    size_t initIndex = segmentIndex;
+
     // Index of the range from which this memory.init starts reading
     size_t firstRangeIdx = 0;
     while (firstRangeIdx < ranges.size() &&
            ranges[firstRangeIdx].end <= start) {
+      if (!ranges[firstRangeIdx].isZero) {
+        ++initIndex;
+      }
       ++firstRangeIdx;
     }
 
@@ -625,7 +637,6 @@ void MemoryPacking::createReplacements(Module* module,
 
     size_t bytesWritten = 0;
 
-    size_t initIndex = segmentIndex;
     for (size_t i = firstRangeIdx; i < ranges.size() && ranges[i].start < end;
          ++i) {
       auto& range = ranges[i];

@@ -52,6 +52,7 @@ int main(int argc, const char* argv[]) {
   bool DWARF = false;
   bool sideModule = false;
   bool legacyPIC = true;
+  bool mutableSP = false;
   bool legalizeJavaScriptFFI = true;
   bool bigInt = false;
   bool checkStackOverflow = false;
@@ -109,6 +110,13 @@ int main(int argc, const char* argv[]) {
          Options::Arguments::Zero,
          [&sideModule](Options* o, const std::string& argument) {
            sideModule = true;
+         })
+    .add("--mutable-sp",
+         "",
+         "Allow the import of __stack_pointer as a mutable global",
+         Options::Arguments::Zero,
+         [&mutableSP](Options* o, const std::string& argument) {
+           mutableSP = true;
          })
     .add("--new-pic-abi",
          "",
@@ -278,7 +286,7 @@ int main(int argc, const char* argv[]) {
   passRunner.setDebug(options.debug);
   passRunner.setDebugInfo(debugInfo);
 
-  if (checkStackOverflow && !sideModule) {
+  if (checkStackOverflow) {
     if (!standaloneWasm) {
       // In standalone mode we don't set a handler at all.. which means
       // just trap on overflow.
@@ -288,7 +296,7 @@ int main(int argc, const char* argv[]) {
     passRunner.add("stack-check");
   }
 
-  if (sideModule) {
+  if (sideModule && !mutableSP) {
     passRunner.add("replace-stack-pointer");
   }
 
@@ -332,15 +340,19 @@ int main(int argc, const char* argv[]) {
     generator.generatePostInstantiateFunction();
   } else {
     BYN_TRACE("finalizing as regular module\n");
-    generator.internalizeStackPointerGlobal();
-    // For side modules these gets called via __post_instantiate
-    if (Function* F = wasm.getFunctionOrNull(ASSIGN_GOT_ENTRIES)) {
-      auto* ex = new Export();
-      ex->value = F->name;
-      ex->name = F->name;
-      ex->kind = ExternalKind::Function;
-      wasm.addExport(ex);
-      initializerFunctions.push_back(F->name);
+    if (legacyPIC) {
+      if (!mutableSP) {
+        generator.internalizeStackPointerGlobal();
+      }
+      // For side modules these gets called via __post_instantiate
+      if (Function* F = wasm.getFunctionOrNull(ASSIGN_GOT_ENTRIES)) {
+        auto* ex = new Export();
+        ex->value = F->name;
+        ex->name = F->name;
+        ex->kind = ExternalKind::Function;
+        wasm.addExport(ex);
+        initializerFunctions.push_back(F->name);
+      }
     }
     // Costructors get called from crt1 in wasm standalone mode.
     // Unless there is no entry point.
